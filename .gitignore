@@ -1,0 +1,18 @@
+# Virtual environment
+.venv/
+venv/
+ENV/
+
+# Python cache
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Local keys & config
+api_key.txt
+gemini_key.txt
+
+# Local state
+bookmarks.json
+chat_history.json

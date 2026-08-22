@@ -1,0 +1,5 @@
+To configure the Gemini API key for this project:
+
+1. Create a text file named "api_key.txt" in the root folder of the project.
+2. Paste your Google Gemini API key into that file (single line, no quotes, no spaces).
+3. Alternatively, you can set the GEMINI_API_KEY environment variable.

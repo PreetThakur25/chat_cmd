@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChatCMD - AI Command Center</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Xterm.js CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css" />
+    <!-- App CSS -->
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-logo">
+                <span class="logo-icon">⚡</span>
+                <h1>ChatCMD <span class="badge-lite">Console</span></h1>
+            </div>
+            <div class="header-controls">
+                <div class="ai-status">
+                    <span id="ai-status-text">AI Translation On</span>
+                    <label class="switch">
+                        <input type="checkbox" id="ai-toggle" checked>
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+                <div class="connection-status disconnected" id="connection-badge">
+                    <span class="status-dot"></span>
+                    <span id="connection-status-text">Shell Connecting...</span>
+                </div>
+            </div>
+        </header>
+
+        <main class="app-body">
+            <!-- Left Pane: AI Assistant & Controls -->
+            <section class="pane left-pane">
+                <div class="card chat-card" id="chat-card-container">
+                    <div class="card-header">
+                        <h2>AI Command Generator</h2>
+                    </div>
+                    <div class="chat-history" id="chat-history">
+                        <div class="chat-message system">
+                            <div class="avatar">🤖</div>
+                            <div class="msg-content">
+                                <p>Hello! Type what you want to achieve in natural language (e.g. <i>"show active port connections"</i> or <i>"find large log files"</i>) and I will generate the PowerShell command.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chat-input-wrapper">
+                        <input type="text" id="ai-input" placeholder="Type a request (e.g., list top 5 running processes)..." />
+                        <button id="send-ai-btn">Translate</button>
+                    </div>
+                </div>
+
+                <!-- Staging Area Card (Hidden until command is generated) -->
+                <div class="card staging-card hidden" id="staging-card">
+                    <div class="card-header">
+                        <h2>Command Staging & Review</h2>
+                        <span class="risk-badge risk-low" id="risk-badge">LOW RISK</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="destructive-warning hidden" id="destructive-warning">
+                            ⚠️ WARNING: This command is flagged as destructive.
+                        </div>
+                        <div class="command-box">
+                            <textarea id="staged-command" spellcheck="false" rows="3"></textarea>
+                        </div>
+                        <p class="command-explanation" id="command-explanation"></p>
+                        <div class="staging-actions">
+                            <button id="run-command-btn" class="btn btn-primary">Run Command</button>
+                            <button id="cancel-command-btn" class="btn btn-secondary">Clear</button>
+                            <button id="bookmark-staged-btn" class="btn btn-outline">Bookmark</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bookmarks & Snippets -->
+                <div class="card bookmarks-card">
+                    <div class="card-header">
+                        <h2>Quick Bookmarks / Snippets</h2>
+                    </div>
+                    <div class="bookmarks-list" id="bookmarks-list">
+                        <!-- Loaded dynamically -->
+                    </div>
+                    <div class="add-bookmark-form">
+                        <input type="text" id="bookmark-name" placeholder="Label (e.g., Check IP)" />
+                        <input type="text" id="bookmark-cmd" placeholder="Command (e.g., ipconfig)" />
+                        <button id="add-bookmark-btn">+</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right Pane: Terminal -->
+            <section class="pane right-pane">
+                <div class="terminal-wrapper">
+                    <div class="terminal-header">
+                        <div class="terminal-title">
+                            <span class="terminal-icon">$_</span>
+                            <h3>Interactive Live Terminal</h3>
+                        </div>
+                        <div class="terminal-actions">
+                            <button id="fix-error-btn" class="btn btn-danger btn-sm hidden">🔧 Fix with AI</button>
+                            <button id="clear-term-btn" class="btn btn-secondary btn-sm">Clear Terminal</button>
+                        </div>
+                    </div>
+                    <div class="terminal-body">
+                        <div id="terminal"></div>
+                    </div>
+                    <div class="terminal-footer">
+                        <span id="cwd-display">CWD: Loading...</span>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- High-Risk Confirmation Modal -->
+        <div class="modal-backdrop hidden" id="confirm-modal">
+            <div class="modal">
+                <div class="modal-header">
+                    <h3>⚠️ Confirm Destructive Execution</h3>
+                </div>
+                <div class="modal-body">
+                    <p>You are attempting to execute a potentially destructive or high-risk command. Please confirm that you want to proceed:</p>
+                    <div class="modal-command-preview">
+                        <code id="modal-command-text"></code>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button id="modal-confirm-btn" class="btn btn-danger">Yes, Execute Command</button>
+                    <button id="modal-cancel-btn" class="btn btn-secondary">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Xterm.js & Fit Addon -->
+    <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.js"></script>
+
+    <!-- App Scripts -->
+    <script src="/static/js/terminal.js"></script>
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
